@@ -142,11 +142,83 @@ data "aws_iam_policy_document" "terraform_runner" {
     ]
     resources = ["arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/bedrock/*"]
   }
+
+  # Lambda management for agent proxy
+  statement {
+    sid    = "LambdaManagement"
+    effect = "Allow"
+    actions = [
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction",
+      "lambda:GetFunction",
+      "lambda:GetFunctionConfiguration",
+      "lambda:UpdateFunctionCode",
+      "lambda:UpdateFunctionConfiguration",
+      "lambda:ListVersionsByFunction",
+      "lambda:PublishVersion",
+      "lambda:CreateFunctionUrlConfig",
+      "lambda:DeleteFunctionUrlConfig",
+      "lambda:GetFunctionUrlConfig",
+      "lambda:UpdateFunctionUrlConfig",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+      "lambda:GetPolicy",
+      "lambda:PutFunctionConcurrency",
+      "lambda:DeleteFunctionConcurrency",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "lambda:ListTags"
+    ]
+    resources = [
+      "arn:aws:lambda:${local.region}:${local.account_id}:function:bedrock-agent-*"
+    ]
+  }
+
+  # IAM for Lambda execution role
+  statement {
+    sid    = "IAMLambdaRoleManagement"
+    effect = "Allow"
+    actions = [
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:GetRole",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:ListRoleTags",
+      "iam:PutRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:PassRole"
+    ]
+    resources = [
+      "arn:aws:iam::${local.account_id}:role/bedrock-agent-lambda-*"
+    ]
+  }
+
+  # AWS Budgets
+  statement {
+    sid    = "BudgetsManagement"
+    effect = "Allow"
+    actions = [
+      "budgets:CreateBudget",
+      "budgets:DeleteBudget",
+      "budgets:DescribeBudget",
+      "budgets:ModifyBudget",
+      "budgets:ViewBudget"
+    ]
+    resources = ["*"]
+  }
 }
 
 # -----------------------------------------------------------------------------
 # Agent Inference Profile Policy (fixes module's incorrect ARN generation)
+# Cross-region inference requires access to foundation model in all regions
 # -----------------------------------------------------------------------------
+locals {
+  # Regions where Amazon Nova Micro is available for cross-region inference
+  nova_regions = ["us-east-1", "us-east-2", "us-west-2"]
+}
+
 data "aws_iam_policy_document" "agent_inference_profile" {
   statement {
     effect = "Allow"
@@ -156,12 +228,10 @@ data "aws_iam_policy_document" "agent_inference_profile" {
       "bedrock:UseInferenceProfile",
       "bedrock:GetInferenceProfile"
     ]
-    resources = [
-      "arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${var.foundation_model}",
-      "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-micro-v1:0",
-      "arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-micro-v1:0",
-      "arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-micro-v1:0"
-    ]
+    resources = concat(
+      ["arn:aws:bedrock:${local.region}:${local.account_id}:inference-profile/${var.foundation_model}"],
+      [for r in local.nova_regions : "arn:aws:bedrock:${r}::foundation-model/amazon.nova-micro-v1:0"]
+    )
   }
 }
 

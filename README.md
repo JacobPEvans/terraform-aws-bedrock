@@ -1,62 +1,62 @@
 # Terraform AWS Bedrock Agent
 
-Deploy an AWS Bedrock agent for text summarization using Terraform and
-Terragrunt.
+Deploy an AWS Bedrock agent for text summarization (or whatever) with a public
+API endpoint. This project sets up an AI-powered assistant that responds to
+simple web requests—no AWS credentials or complex setup required to use it.
+Just send text, get an AI response back.
 
-## Overview
+## Try It
 
-This project provisions a production-ready Amazon Bedrock agent that
-summarizes text using the Amazon Nova Micro model. Infrastructure is managed
-with Terragrunt for remote state handling and consistent configuration.
+Once deployed, invoke the agent with a simple curl:
 
-### Features
+```bash
+curl -X POST "https://<function-id>.lambda-url.<region>.on.aws/" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Your text to summarize..."}'
+```
 
-- **Text Summarization Agent** - Concise summaries of input text
-- **Amazon Nova Micro** - Cost-effective model via inference profile
-- **Remote State** - S3 backend with DynamoDB locking
-- **Least-Privilege IAM** - Confused deputy protection on execution role
-- **GitHub Actions CI/CD** - Plan on PR, manual apply workflow
+![Example chat with the Bedrock agent](.github/sample-bedrock-chat.jpg)
 
-## Quick Start
+## Features
+
+- **Public API** — No auth required, just curl
+- **Rate Limited** — 5 concurrent requests max
+- **Input Protection** — 20,000 character limit
+- **Personality** — Responses include wit and puns
+
+## Deploy Your Own
 
 ### Prerequisites
 
-- AWS account with Bedrock access enabled
+- AWS account with Bedrock access
 - [aws-vault](https://github.com/99designs/aws-vault) configured
-- [Nix](https://nixos.org/) with flakes (or install Terraform manually)
+- [Nix](https://nixos.org/) with flakes (or OpenTofu/Terragrunt installed)
 
 ### Setup
 
-1. **Configure AWS credentials**
+```bash
+# Configure credentials
+aws-vault add terraform-bedrock
 
-   ```bash
-   aws-vault add terraform-bedrock
-   ```
+# Enter dev shell
+nix develop
 
-2. **Enter development shell**
+# Deploy
+aws-vault exec terraform-bedrock --no-session -- terragrunt apply
+```
 
-   ```bash
-   nix develop
-   ```
-
-3. **Deploy infrastructure**
-
-   ```bash
-   aws-vault exec terraform-bedrock --no-session -- terragrunt apply
-   ```
-
-### Invoke the Agent
+### Direct SDK Access
 
 ```python
 import boto3
 
-client = boto3.client("bedrock-agent-runtime", region_name="us-east-2")
+client = boto3.client("bedrock-agent-runtime", region_name="<region>")
 
 response = client.invoke_agent(
     agentId="<AGENT_ID>",
     agentAliasId="TSTALIASID",
-    sessionId="my-session",
-    inputText="Summarize: Your text here..."
+    sessionId="test",
+    inputText="Summarize: Your text here"
 )
 
 for event in response["completion"]:
@@ -64,40 +64,11 @@ for event in response["completion"]:
         print(event["chunk"]["bytes"].decode())
 ```
 
-## Project Structure
-
-```text
-main/
-├── main.tf           # Bedrock agent module configuration
-├── variables.tf      # Input variables (region, model, TTL)
-├── outputs.tf        # Agent ARN and role outputs
-├── locals.tf         # Tags and agent instructions
-├── versions.tf       # Provider version constraints
-├── iam_policies.tf   # IAM policy documents (reference only)
-├── terragrunt.hcl    # Remote state and provider configuration
-└── .github/
-    └── workflows/
-        └── terraform.yml  # CI/CD pipeline
-```
-
 ## Configuration
 
-| Variable           | Default                     | Description            |
-|--------------------|-----------------------------|------------------------|
-| `aws_region`       | `us-east-2`                 | AWS region             |
-| `agent_name`       | `text-summarizer`           | Bedrock agent name     |
-| `foundation_model` | `us.amazon.nova-micro-v1:0` | Model inference ID     |
-| `idle_session_ttl` | `600`                       | Session timeout (sec)  |
-
-## IAM Requirements
-
-The Terraform runner requires permissions documented in `iam_policies.tf`:
-
-- Bedrock agent management
-- IAM role creation for agent execution
-- S3/DynamoDB for state management
-- CloudFormation for AWSCC provider
-
-## License
-
-MIT
+| Variable           | Default                     | Description          |
+|--------------------|-----------------------------|----------------------|
+| `aws_region`       | `us-east-2`                 | AWS region           |
+| `agent_name`       | `text-summarizer`           | Bedrock agent name   |
+| `foundation_model` | `us.amazon.nova-micro-v1:0` | Model inference ID   |
+| `idle_session_ttl` | `600`                       | Session timeout (s)  |

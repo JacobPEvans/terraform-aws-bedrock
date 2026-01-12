@@ -5,9 +5,5 @@ locals {
     Environment = "production"
   }
 
-  agent_instruction = <<-EOT
-    You are a text summarization assistant. When given text,
-    produce a concise summary that captures the key points.
-    Keep summaries under 100 words unless the input is very long.
-  EOT
+  agent_instruction = file("${path.module}/INSTRUCTION.md")
 }

@@ -17,7 +17,7 @@ keychain:
 | Account          | Service                    | Description              |
 |------------------|----------------------------|--------------------------|
 | `AWS_ACCOUNT_ID` | `terraform-bedrock-config` | AWS account ID           |
-| `AWS_REGION`     | `terraform-bedrock-config` | AWS region (us-east-2)   |
+| `AWS_REGION`     | `terraform-bedrock-config` | AWS region               |
 
 Retrieve secrets:
 
@@ -59,7 +59,7 @@ aws-vault exec terraform-bedrock --no-session -- terragrunt destroy
 
 ## Architecture
 
-- **State**: S3 bucket with DynamoDB locking (us-east-2)
+- **State**: S3 bucket with DynamoDB locking
 - **Agent**: Amazon Nova Micro via inference profile
 - **IAM**: Least-privilege execution role with confused deputy protection
 
