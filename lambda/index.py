@@ -13,6 +13,8 @@ import boto3
 
 # Configuration from environment
 AGENT_ID = os.environ.get("AGENT_ID")
+if not AGENT_ID:
+    raise ValueError("Required environment variable AGENT_ID is not set.")
 AGENT_ALIAS_ID = os.environ.get("AGENT_ALIAS_ID", "TSTALIASID")
 MAX_INPUT_CHARS = int(os.environ.get("MAX_INPUT_CHARS", "1000"))
 REGION = os.environ.get("AWS_REGION", "us-east-2")

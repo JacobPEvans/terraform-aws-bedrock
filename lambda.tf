@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "logs:CreateLogStream",
       "logs:PutLogEvents"
     ]
-    resources = ["arn:aws:logs:${local.region}:${local.account_id}:*"]
+    resources = ["arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/bedrock-agent-${var.agent_name}:*"]
   }
 
   # Bedrock Agent Invocation
@@ -57,7 +57,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "bedrock:InvokeAgent"
     ]
     resources = [
-      "arn:aws:bedrock:${local.region}:${local.account_id}:agent-alias/*/*"
+      "arn:aws:bedrock:${local.region}:${local.account_id}:agent-alias/*/TSTALIASID"
     ]
   }
 }
@@ -145,15 +145,6 @@ resource "aws_lambda_permission" "function_url_invoke" {
   function_name          = aws_lambda_function.agent_proxy[0].function_name
   principal              = "*"
   function_url_auth_type = "NONE"
-}
-
-resource "aws_lambda_permission" "function_url_invoke_function" {
-  count = var.enable_lambda_url ? 1 : 0
-
-  statement_id  = "FunctionURLInvokeAllowPublicAccess"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.agent_proxy[0].function_name
-  principal     = "*"
 }
 
 # -----------------------------------------------------------------------------

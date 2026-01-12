@@ -10,10 +10,12 @@ Just send text, get an AI response back.
 Once deployed, invoke the agent with a simple curl:
 
 ```bash
-curl -X POST "https://<function-id>.lambda-url.<region>.on.aws/" \
+curl -X POST "https://<function-id>.lambda-url.<aws-region>.on.aws/" \
   -H "Content-Type: application/json" \
   -d '{"text": "Your text to summarize..."}'
 ```
+
+Replace `<aws-region>` with your deployment region (e.g., `us-east-2`).
 
 ![Example chat with the Bedrock agent](.github/sample-bedrock-chat.jpg)
 

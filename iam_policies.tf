@@ -195,18 +195,25 @@ data "aws_iam_policy_document" "terraform_runner" {
     ]
   }
 
-  # AWS Budgets
+  # AWS Budgets Creation (requires wildcard resource)
+  statement {
+    sid       = "BudgetsCreation"
+    effect    = "Allow"
+    actions   = ["budgets:CreateBudget"]
+    resources = ["*"]
+  }
+
+  # AWS Budgets Management (scoped to specific budget)
   statement {
     sid    = "BudgetsManagement"
     effect = "Allow"
     actions = [
-      "budgets:CreateBudget",
       "budgets:DeleteBudget",
       "budgets:DescribeBudget",
       "budgets:ModifyBudget",
       "budgets:ViewBudget"
     ]
-    resources = ["*"]
+    resources = ["arn:aws:budgets::${local.account_id}:budget/bedrock-agent-*"]
   }
 }
 
