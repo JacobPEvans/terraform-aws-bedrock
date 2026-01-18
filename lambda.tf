@@ -1,11 +1,11 @@
-# Lambda Function URL for public Bedrock agent access
+# Lambda Function URL for Bedrock agent access (IAM authenticated)
 # Includes rate limiting and input protection
 
 # -----------------------------------------------------------------------------
 # Variables
 # -----------------------------------------------------------------------------
 variable "enable_lambda_url" {
-  description = "Enable public Lambda Function URL for agent access"
+  description = "Enable Lambda Function URL for agent access (IAM authenticated)"
   type        = bool
   default     = true
 }
@@ -94,7 +94,7 @@ resource "aws_lambda_function" "agent_proxy" {
   count = var.enable_lambda_url ? 1 : 0
 
   function_name = "bedrock-agent-${var.agent_name}"
-  description   = "Public proxy for Bedrock agent invocation"
+  description   = "Proxy for Bedrock agent invocation"
 
   filename         = data.archive_file.lambda[0].output_path
   source_code_hash = data.archive_file.lambda[0].output_base64sha256
@@ -120,13 +120,13 @@ resource "aws_lambda_function" "agent_proxy" {
 }
 
 # -----------------------------------------------------------------------------
-# Lambda Function URL (Public Access)
+# Lambda Function URL (IAM Authenticated)
 # -----------------------------------------------------------------------------
 resource "aws_lambda_function_url" "agent" {
   count = var.enable_lambda_url ? 1 : 0
 
   function_name      = aws_lambda_function.agent_proxy[0].function_name
-  authorization_type = "NONE"
+  authorization_type = "AWS_IAM"
 
   cors {
     allow_origins = ["*"]
@@ -136,31 +136,20 @@ resource "aws_lambda_function_url" "agent" {
   }
 }
 
-# Allow public access to Function URL (requires both permissions)
-resource "aws_lambda_permission" "function_url_invoke" {
-  count = var.enable_lambda_url ? 1 : 0
-
-  statement_id           = "FunctionURLAllowPublicAccess"
-  action                 = "lambda:InvokeFunctionUrl"
-  function_name          = aws_lambda_function.agent_proxy[0].function_name
-  principal              = "*"
-  function_url_auth_type = "NONE"
-}
-
 # -----------------------------------------------------------------------------
 # Outputs
 # -----------------------------------------------------------------------------
 output "lambda_function_url" {
-  description = "Public URL to invoke the Bedrock agent"
+  description = "URL to invoke the Bedrock agent (requires IAM authentication)"
   value       = var.enable_lambda_url ? aws_lambda_function_url.agent[0].function_url : null
 }
 
-output "curl_example" {
-  description = "Example curl command to invoke the agent"
+output "awscurl_example" {
+  description = "Example awscurl command to invoke the agent (pip install awscurl)"
   value = var.enable_lambda_url ? join("", [
-    "curl -X POST ",
+    "awscurl --service lambda ",
     aws_lambda_function_url.agent[0].function_url,
-    " -H 'Content-Type: application/json'",
+    " -X POST -H 'Content-Type: application/json'",
     " -d '{\"text\": \"Summarize: Your text here...\"}'"
   ]) : null
 }
