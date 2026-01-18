@@ -1,1 +1,0 @@
-/Users/jevans/git/nix/shells/terraform/flake.nix
