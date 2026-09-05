@@ -1,3 +1,6 @@
+---
+skill-groups: [core, git, homelab]
+---
 # Terraform AWS Bedrock - Agent Instructions
 
 Technical reference for AI assistants working on this repository.
